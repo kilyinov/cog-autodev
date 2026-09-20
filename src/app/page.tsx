@@ -23,7 +23,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const { totals } = data;
 
   return (
-    <div className="min-h-full bg-slate-950 text-slate-100">
+    <div className="min-h-screen flex-1 bg-slate-950 text-slate-100">
       <div className="mx-auto w-full max-w-7xl px-6 py-10">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>

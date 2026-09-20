@@ -54,9 +54,12 @@ export function mockSessions(count = 90, now = Date.now()): DevinSessionSummary[
 
   for (let i = 0; i < count; i += 1) {
     const status = pick(random, STATUSES);
-    const ageMinutes = Math.floor(random() * 60 * 24 * 30);
     const durationMinutes = 8 + Math.floor(random() * 220);
-    const createdAt = new Date(now - ageMinutes * 60_000);
+    const dayOffset = Math.floor(random() * 30);
+    const todayStart = new Date(now).setUTCHours(0, 0, 0, 0);
+    const startOfDay = todayStart - dayOffset * 86_400_000;
+    const spanMs = dayOffset === 0 ? Math.max(60_000, now - todayStart) : 86_400_000;
+    const createdAt = new Date(startOfDay + Math.floor(random() * spanMs));
     const updatedAt = new Date(
       Math.min(now, createdAt.getTime() + durationMinutes * 60_000),
     );
