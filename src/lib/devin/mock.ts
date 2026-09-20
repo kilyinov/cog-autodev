@@ -48,13 +48,13 @@ function pick<T>(random: () => number, values: readonly T[]): T {
  * Builds a plausible set of session summaries matching the Devin API shape, so
  * the control plane is explorable without an API key.
  */
-export function mockSessions(count = 48, now = Date.now()): DevinSessionSummary[] {
+export function mockSessions(count = 90, now = Date.now()): DevinSessionSummary[] {
   const random = mulberry32(1337);
   const sessions: DevinSessionSummary[] = [];
 
   for (let i = 0; i < count; i += 1) {
     const status = pick(random, STATUSES);
-    const ageMinutes = Math.floor(random() * 60 * 24 * 14);
+    const ageMinutes = Math.floor(random() * 60 * 24 * 30);
     const durationMinutes = 8 + Math.floor(random() * 220);
     const createdAt = new Date(now - ageMinutes * 60_000);
     const updatedAt = new Date(

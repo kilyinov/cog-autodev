@@ -1,5 +1,12 @@
 import type { DailyActivity } from "@/lib/devin/types";
 
+const CHART_HEIGHT_PX = 128;
+
+function barHeight(value: number, max: number): number {
+  if (value === 0) return 0;
+  return Math.max(2, Math.round((value / max) * CHART_HEIGHT_PX));
+}
+
 export function ActivityChart({ activity }: { activity: DailyActivity[] }) {
   const max = Math.max(1, ...activity.map((day) => day.sessions));
 
@@ -9,18 +16,21 @@ export function ActivityChart({ activity }: { activity: DailyActivity[] }) {
         <h2 className="text-sm font-semibold text-slate-200">Daily activity</h2>
         <p className="text-xs text-slate-500">sessions vs. pull requests</p>
       </header>
-      <div className="mt-6 flex h-40 items-end gap-3">
+      <div className="mt-6 flex items-end gap-3">
         {activity.map((day) => (
           <div key={day.date} className="flex flex-1 flex-col items-center gap-2">
-            <div className="flex h-full w-full items-end justify-center gap-1">
+            <div
+              className="flex w-full items-end justify-center gap-1"
+              style={{ height: `${CHART_HEIGHT_PX}px` }}
+            >
               <div
                 className="w-1/3 rounded-t bg-sky-500/70"
-                style={{ height: `${(day.sessions / max) * 100}%` }}
+                style={{ height: `${barHeight(day.sessions, max)}px` }}
                 title={`${day.sessions} sessions`}
               />
               <div
                 className="w-1/3 rounded-t bg-emerald-500/70"
-                style={{ height: `${(day.pullRequests / max) * 100}%` }}
+                style={{ height: `${barHeight(day.pullRequests, max)}px` }}
                 title={`${day.pullRequests} pull requests`}
               />
             </div>
