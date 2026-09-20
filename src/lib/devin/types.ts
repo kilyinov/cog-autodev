@@ -6,23 +6,27 @@ export type SessionStatus =
   | "suspended"
   | "unknown";
 
-export type PullRequestInfo = {
-  url: string;
+export type DevinPullRequest = {
+  pr_url: string;
+  pr_state: string | null;
 };
 
-/** Shape returned by `GET /v1/sessions` on the Devin API. */
-export type DevinSessionSummary = {
+/** Session item returned by `GET /v3/organizations/{org_id}/sessions`. */
+export type DevinSession = {
   session_id: string;
+  url: string;
+  /** One of new, claimed, running, exit, error, suspended, resuming. */
   status: string;
-  status_enum: string | null;
+  status_detail: string | null;
   title: string | null;
-  created_at: string;
-  updated_at: string;
-  requesting_user_email: string | null;
+  /** Unix timestamp (seconds). */
+  created_at: number;
+  /** Unix timestamp (seconds). */
+  updated_at: number;
+  user_id: string | null;
   playbook_id: string | null;
-  snapshot_id: string | null;
-  tags: string[] | null;
-  pull_request: PullRequestInfo | null;
+  tags: string[];
+  pull_requests: DevinPullRequest[];
 };
 
 export type SessionView = {

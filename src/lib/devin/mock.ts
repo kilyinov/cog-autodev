@@ -1,4 +1,4 @@
-import type { DevinSessionSummary } from "./types";
+import type { DevinSession } from "./types";
 
 const TITLES = [
   "Fix flaky checkout integration test",
@@ -16,18 +16,19 @@ const TITLES = [
 ];
 
 const REPOS = ["kilyinov/cog-autodev", "kilyinov/platform-api", "kilyinov/web-app"];
-const USERS = ["konstantin.ilinov@gmail.com", "agent-runner@cog-autodev.dev"];
+const USERS = ["user-3f9a1c2e4b5d4a6f8e7c9b0d1a2f3e4c", "user-7a3c0f2e9d1b4c5aa8e6f0b2d4c6e8a0"];
 const TAG_POOL = ["nightly", "triage", "ci", "backlog", "playbook:review"];
-const STATUSES = [
-  "finished",
-  "finished",
-  "finished",
-  "finished",
-  "working",
-  "working",
-  "blocked",
-  "expired",
-] as const;
+/** `[status, status_detail]` pairs as returned by the v3 sessions API. */
+const STATUSES: readonly [string, string | null][] = [
+  ["exit", null],
+  ["exit", null],
+  ["exit", null],
+  ["running", "finished"],
+  ["running", "working"],
+  ["running", "working"],
+  ["running", "waiting_for_user"],
+  ["error", null],
+];
 
 /** Deterministic PRNG so server and client renders agree and demos are stable. */
 function mulberry32(seed: number) {
@@ -48,12 +49,13 @@ function pick<T>(random: () => number, values: readonly T[]): T {
  * Builds a plausible set of session summaries matching the Devin API shape, so
  * the control plane is explorable without an API key.
  */
-export function mockSessions(count = 90, now = Date.now()): DevinSessionSummary[] {
+export function mockSessions(count = 90, now = Date.now()): DevinSession[] {
   const random = mulberry32(1337);
-  const sessions: DevinSessionSummary[] = [];
+  const sessions: DevinSession[] = [];
 
   for (let i = 0; i < count; i += 1) {
-    const status = pick(random, STATUSES);
+    const [status, statusDetail] = pick(random, STATUSES);
+    const isFinished = status === "exit" || statusDetail === "finished";
     const durationMinutes = 8 + Math.floor(random() * 220);
     const dayOffset = Math.floor(random() * 30);
     const todayStart = new Date(now).setUTCHours(0, 0, 0, 0);
@@ -63,29 +65,33 @@ export function mockSessions(count = 90, now = Date.now()): DevinSessionSummary[
     const updatedAt = new Date(
       Math.min(now, createdAt.getTime() + durationMinutes * 60_000),
     );
-    const hasPr = status === "finished" ? random() < 0.72 : random() < 0.12;
+    const hasPr = isFinished ? random() < 0.72 : random() < 0.12;
     const repo = pick(random, REPOS);
+    const sessionId = `devin-${(i + 1).toString().padStart(4, "0")}${Math.floor(random() * 1e6)
+      .toString(16)
+      .padStart(5, "0")}`;
 
     sessions.push({
-      session_id: `devin-${(i + 1).toString().padStart(4, "0")}${Math.floor(random() * 1e6)
-        .toString(16)
-        .padStart(5, "0")}`,
+      session_id: sessionId,
+      url: `https://app.devin.ai/sessions/${sessionId.replace(/^devin-/, "")}`,
       status,
-      status_enum: status,
+      status_detail: statusDetail,
       title: pick(random, TITLES),
-      created_at: createdAt.toISOString(),
-      updated_at: updatedAt.toISOString(),
-      requesting_user_email: pick(random, USERS),
+      created_at: Math.floor(createdAt.getTime() / 1000),
+      updated_at: Math.floor(updatedAt.getTime() / 1000),
+      user_id: pick(random, USERS),
       playbook_id: random() < 0.4 ? `playbook-${Math.floor(random() * 900 + 100)}` : null,
-      snapshot_id: null,
       tags: random() < 0.6 ? [pick(random, TAG_POOL)] : [],
-      pull_request: hasPr
-        ? { url: `https://github.com/${repo}/pull/${1200 + Math.floor(random() * 400)}` }
-        : null,
+      pull_requests: hasPr
+        ? [
+            {
+              pr_url: `https://github.com/${repo}/pull/${1200 + Math.floor(random() * 400)}`,
+              pr_state: "open",
+            },
+          ]
+        : [],
     });
   }
 
-  return sessions.sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+  return sessions.sort((a, b) => b.created_at - a.created_at);
 }
