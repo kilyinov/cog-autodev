@@ -93,17 +93,21 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <ActivityChart activity={data.activity} />
           </div>
-          <IssuesPanel issues={data.issues} />
+          <div className="min-w-0">
+            <IssuesPanel issues={data.issues} />
+          </div>
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <SessionsTable sessions={data.sessions} />
           </div>
-          <PullRequestsPanel pullRequests={data.pullRequests} />
+          <div className="min-w-0">
+            <PullRequestsPanel pullRequests={data.pullRequests} />
+          </div>
         </div>
 
         <footer className="mt-10 text-xs text-slate-600">

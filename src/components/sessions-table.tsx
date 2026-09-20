@@ -4,7 +4,7 @@ import { StatusBadge } from "./status-badge";
 
 export function SessionsTable({ sessions }: { sessions: SessionView[] }) {
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/60">
+    <section className="min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
       <header className="flex items-baseline justify-between border-b border-slate-800 p-5">
         <h2 className="text-sm font-semibold text-slate-200">Recent sessions</h2>
         <p className="text-xs text-slate-500">showing {Math.min(sessions.length, 15)}</p>
@@ -27,7 +27,7 @@ export function SessionsTable({ sessions }: { sessions: SessionView[] }) {
             <tbody className="divide-y divide-slate-800">
               {sessions.slice(0, 15).map((session) => (
                 <tr key={session.id} className="hover:bg-slate-800/40">
-                  <td className="max-w-xs px-5 py-3">
+                  <td className="max-w-[220px] px-5 py-3">
                     <a
                       href={session.url}
                       target="_blank"

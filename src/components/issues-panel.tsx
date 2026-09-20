@@ -7,7 +7,7 @@ const SEVERITY_CLASSES: Record<AgentIssue["severity"], string> = {
 
 export function IssuesPanel({ issues }: { issues: AgentIssue[] }) {
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+    <section className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
       <header className="flex items-baseline justify-between">
         <h2 className="text-sm font-semibold text-slate-200">Agent issues</h2>
         <p className="text-xs text-slate-500">{issues.length} detected</p>
@@ -35,7 +35,7 @@ export function IssuesPanel({ issues }: { issues: AgentIssue[] }) {
                 href={issue.sessionUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1 inline-block text-xs text-slate-400 underline underline-offset-2 hover:text-slate-200"
+                className="mt-1 block truncate text-xs text-slate-400 underline underline-offset-2 hover:text-slate-200"
               >
                 {issue.sessionTitle}
               </a>

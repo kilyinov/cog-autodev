@@ -2,7 +2,7 @@ import type { PullRequestView } from "@/lib/devin/types";
 
 export function PullRequestsPanel({ pullRequests }: { pullRequests: PullRequestView[] }) {
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+    <section className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
       <header className="flex items-baseline justify-between">
         <h2 className="text-sm font-semibold text-slate-200">Pull requests</h2>
         <p className="text-xs text-slate-500">{pullRequests.length} opened by sessions</p>
@@ -18,7 +18,7 @@ export function PullRequestsPanel({ pullRequests }: { pullRequests: PullRequestV
                 href={pr.url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-sm font-medium text-sky-300 hover:underline"
+                className="block truncate text-sm font-medium text-sky-300 hover:underline"
               >
                 {pr.repo}
                 {pr.number ? ` #${pr.number}` : ""}
