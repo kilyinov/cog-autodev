@@ -9,7 +9,7 @@ export type DashboardResult = {
 };
 
 /**
- * Loads dashboard data from the Devin API when `DEVIN_API_KEY` is configured,
+ * Loads dashboard data from the Devin API when `DEVIN_API_KEY` and `DEVIN_ORG_ID` are configured,
  * otherwise falls back to mock sessions so the control plane stays usable.
  */
 export async function getDashboardData(windowDays = 7): Promise<DashboardResult> {

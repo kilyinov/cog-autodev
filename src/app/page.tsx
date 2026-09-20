@@ -63,7 +63,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         >
           {data.source === "live"
             ? "Live data from the Devin API."
-            : "Demo data. Set DEVIN_API_KEY to show your organization's real sessions."}
+            : "Demo data. Set DEVIN_API_KEY and DEVIN_ORG_ID to show your organization's real sessions."}
           {error ? ` Devin API error: ${error}` : ""}
         </div>
 

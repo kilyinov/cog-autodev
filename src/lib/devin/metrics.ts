@@ -2,7 +2,7 @@ import type {
   AgentIssue,
   DailyActivity,
   DashboardData,
-  DevinSessionSummary,
+  DevinSession,
   PullRequestView,
   SessionStatus,
   SessionView,
@@ -10,14 +10,29 @@ import type {
 
 const STALLED_AFTER_MINUTES = 240;
 
-function normalizeStatus(session: DevinSessionSummary): SessionStatus {
-  const raw = (session.status_enum ?? session.status ?? "").toLowerCase();
-  if (raw.startsWith("suspend") || raw.startsWith("resum")) return "suspended";
-  if (raw === "working" || raw === "running" || raw === "claimed") return "working";
-  if (raw === "blocked") return "blocked";
-  if (raw === "expired" || raw === "error") return "expired";
-  if (raw === "finished" || raw === "exit") return "finished";
+function normalizeStatus(session: DevinSession): SessionStatus {
+  const status = (session.status ?? "").toLowerCase();
+  const detail = (session.status_detail ?? "").toLowerCase();
+  if (status === "suspended" || status === "resuming") return "suspended";
+  if (status === "error") return "expired";
+  if (status === "exit") return "finished";
+  if (status === "running") {
+    if (detail === "waiting_for_user" || detail === "waiting_for_approval") return "blocked";
+    if (detail === "finished") return "finished";
+    return "working";
+  }
+  if (status === "new" || status === "claimed") return "working";
   return "unknown";
+}
+
+function rawStatus(session: DevinSession): string {
+  return session.status_detail ? `${session.status}/${session.status_detail}` : session.status;
+}
+
+/** The v3 API returns Unix seconds; tolerate milliseconds too. */
+function toIso(timestamp: number): string {
+  const ms = timestamp < 1e12 ? timestamp * 1000 : timestamp;
+  return new Date(ms).toISOString();
 }
 
 function minutesBetween(from: string, to: string): number {
@@ -30,19 +45,22 @@ function parsePullRequest(url: string): { repo: string; number: string } {
   return { repo: url.replace(/^https?:\/\//, "").split("/").slice(0, 2).join("/"), number: "" };
 }
 
-function toSessionView(session: DevinSessionSummary): SessionView {
+function toSessionView(session: DevinSession): SessionView {
+  const createdAt = toIso(session.created_at);
+  const updatedAt = toIso(session.updated_at);
   return {
     id: session.session_id,
-    url: `https://app.devin.ai/sessions/${session.session_id.replace(/^devin-/, "")}`,
+    url:
+      session.url || `https://app.devin.ai/sessions/${session.session_id.replace(/^devin-/, "")}`,
     title: session.title?.trim() || "Untitled session",
     status: normalizeStatus(session),
-    rawStatus: session.status_enum ?? session.status,
-    createdAt: session.created_at,
-    updatedAt: session.updated_at,
-    durationMinutes: minutesBetween(session.created_at, session.updated_at),
-    requestedBy: session.requesting_user_email,
+    rawStatus: rawStatus(session),
+    createdAt,
+    updatedAt,
+    durationMinutes: minutesBetween(createdAt, updatedAt),
+    requestedBy: session.user_id,
     tags: session.tags ?? [],
-    pullRequestUrl: session.pull_request?.url ?? null,
+    pullRequestUrl: session.pull_requests?.[0]?.pr_url ?? null,
   };
 }
 
@@ -144,7 +162,7 @@ function median(values: number[]): number {
 }
 
 export function buildDashboard(
-  rawSessions: DevinSessionSummary[],
+  rawSessions: DevinSession[],
   options: { source: "live" | "mock"; windowDays?: number; now?: number },
 ): DashboardData {
   const now = options.now ?? Date.now();
