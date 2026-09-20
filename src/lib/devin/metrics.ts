@@ -106,10 +106,22 @@ export function formatMinutes(minutes: number): string {
   return `${Math.floor(hours / 24)}d ${hours % 24}h`;
 }
 
-function buildActivity(sessions: SessionView[], windowDays: number, now: number): DailyActivity[] {
+/** Start of the UTC day `windowDays - 1` days back, so buckets and cutoff agree. */
+function windowStart(now: number, windowDays: number): number {
+  const today = new Date(now);
+  const todayStart = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+  );
+  return todayStart - (windowDays - 1) * 86_400_000;
+}
+
+function buildActivity(windowDays: number, now: number, sessions: SessionView[]): DailyActivity[] {
+  const start = windowStart(now, windowDays);
   const days: DailyActivity[] = [];
-  for (let offset = windowDays - 1; offset >= 0; offset -= 1) {
-    const day = new Date(now - offset * 86_400_000);
+  for (let offset = 0; offset < windowDays; offset += 1) {
+    const day = new Date(start + offset * 86_400_000);
     days.push({ date: day.toISOString().slice(0, 10), sessions: 0, pullRequests: 0 });
   }
 
@@ -137,7 +149,7 @@ export function buildDashboard(
 ): DashboardData {
   const now = options.now ?? Date.now();
   const windowDays = options.windowDays ?? 7;
-  const cutoff = now - windowDays * 86_400_000;
+  const cutoff = windowStart(now, windowDays);
 
   const sessions = rawSessions
     .map(toSessionView)
@@ -194,7 +206,7 @@ export function buildDashboard(
       medianDurationMinutes: median(finished.map((session) => session.durationMinutes)),
     },
     statusBreakdown,
-    activity: buildActivity(sessions, windowDays, now),
+    activity: buildActivity(windowDays, now, sessions),
     sessions,
     pullRequests,
     issues,
