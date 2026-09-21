@@ -23,6 +23,17 @@ npm run dev
 
 Open http://localhost:3000.
 
+## Docker
+
+```bash
+docker build -t cog-autodev .
+docker run -p 3000:3000 --env-file .env.local cog-autodev
+```
+
+The image is a multi-stage build using Next.js `output: "standalone"`, runs as a non-root user
+and listens on port 3000. `--env-file` is optional; without `DEVIN_API_KEY` the dashboard serves
+demo data.
+
 ## Data source
 
 With `DEVIN_API_KEY` and `DEVIN_ORG_ID` set, data is pulled from the Devin API
