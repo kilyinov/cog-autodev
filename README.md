@@ -32,6 +32,20 @@ The organization ID (`org-…`) is shown at the top of the same settings page. T
 `https://api.devin.ai` unless you are on a dedicated Devin Enterprise deployment, in which case set
 `DEVIN_API_BASE_URL` to your custom API domain. Aggregated metrics are also served as JSON from `/api/dashboard?windowDays=7`.
 
+## API endpoints
+
+- `GET /api/dashboard?windowDays=7` — aggregated dashboard metrics
+- `POST /api/sessions` — create a Devin session
+
+## Creating sessions
+
+The **New session** form on `/` creates a Devin session from a prompt and mode. It calls
+`POST /api/sessions` with `{ "prompt": string, "devinMode": string }` and returns the new
+session's ID, URL, status, title, mode, and ISO creation timestamp. Supported mode values are
+`normal`, `fast`, `lite`, `ultra`, and `fusion`; `devin_mode` is Devin's API mode selector
+(not a literal LLM model picker). The service user must have permission to create sessions in
+the organization.
+
 ## Scripts
 
 | Script | Description |

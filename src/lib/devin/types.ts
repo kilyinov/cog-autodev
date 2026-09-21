@@ -6,6 +6,16 @@ export type SessionStatus =
   | "suspended"
   | "unknown";
 
+export type DevinMode = "normal" | "fast" | "lite" | "ultra" | "fusion";
+
+export const DEVIN_MODES: readonly DevinMode[] = [
+  "normal",
+  "fast",
+  "lite",
+  "ultra",
+  "fusion",
+];
+
 export type DevinPullRequest = {
   pr_url: string;
   pr_state: string | null;
@@ -23,6 +33,7 @@ export type DevinSession = {
   created_at: number;
   /** Unix timestamp (seconds). */
   updated_at: number;
+  devin_mode?: DevinMode | null;
   user_id: string | null;
   playbook_id: string | null;
   tags: string[];
@@ -41,6 +52,15 @@ export type SessionView = {
   requestedBy: string | null;
   tags: string[];
   pullRequestUrl: string | null;
+};
+
+export type CreatedSessionView = {
+  sessionId: string;
+  url: string;
+  status: string;
+  title: string | null;
+  devinMode: DevinMode | null;
+  createdAt: string;
 };
 
 export type PullRequestView = {

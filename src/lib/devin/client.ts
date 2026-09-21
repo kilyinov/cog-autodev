@@ -1,4 +1,4 @@
-import type { DevinSession } from "./types";
+import type { DevinMode, DevinSession } from "./types";
 
 const DEFAULT_BASE_URL = "https://api.devin.ai";
 
@@ -22,11 +22,27 @@ type SessionsPage = {
   has_next_page?: boolean;
 };
 
-/**
- * Fetches sessions from `GET /v3/organizations/{org_id}/sessions`, following
- * `end_cursor` until `limit` sessions are collected or the API runs out.
- */
-export async function fetchSessions(limit = 100): Promise<DevinSession[]> {
+type DevinConfig = {
+  apiKey: string;
+  orgId: string;
+  baseUrl: string;
+};
+
+export type CreateSessionInput = {
+  prompt: string;
+  devinMode?: DevinMode;
+  title?: string | null;
+  tags?: string[];
+};
+
+export type CreatedSession = Pick<
+  DevinSession,
+  "session_id" | "url" | "status" | "title" | "created_at" | "updated_at" | "tags"
+> & {
+  devin_mode: DevinMode | null;
+};
+
+function resolveConfig(): DevinConfig {
   const apiKey = process.env.DEVIN_API_KEY;
   const orgId = process.env.DEVIN_ORG_ID;
   if (!apiKey) {
@@ -36,7 +52,36 @@ export async function fetchSessions(limit = 100): Promise<DevinSession[]> {
     throw new DevinApiError("DEVIN_ORG_ID is not set", 401);
   }
 
-  const baseUrl = process.env.DEVIN_API_BASE_URL ?? DEFAULT_BASE_URL;
+  return {
+    apiKey,
+    orgId,
+    baseUrl: process.env.DEVIN_API_BASE_URL ?? DEFAULT_BASE_URL,
+  };
+}
+
+async function apiErrorFromResponse(response: Response): Promise<DevinApiError> {
+  let message: string | null = null;
+  try {
+    const problem = (await response.json()) as { title?: unknown; detail?: unknown };
+    const title = typeof problem.title === "string" ? problem.title : null;
+    const detail = typeof problem.detail === "string" ? problem.detail : null;
+    message = title && detail ? `${title}: ${detail}` : title ?? detail;
+  } catch {
+    // Use the generic response message when the body is not JSON.
+  }
+
+  return new DevinApiError(
+    message ?? `Devin API request failed: ${response.status} ${response.statusText}`,
+    response.status,
+  );
+}
+
+/**
+ * Fetches sessions from `GET /v3/organizations/{org_id}/sessions`, following
+ * `end_cursor` until `limit` sessions are collected or the API runs out.
+ */
+export async function fetchSessions(limit = 100): Promise<DevinSession[]> {
+  const { apiKey, orgId, baseUrl } = resolveConfig();
   const pageSize = 100;
   const collected: DevinSession[] = [];
   let cursor: string | null = null;
@@ -52,10 +97,7 @@ export async function fetchSessions(limit = 100): Promise<DevinSession[]> {
     });
 
     if (!response.ok) {
-      throw new DevinApiError(
-        `Devin API request failed: ${response.status} ${response.statusText}`,
-        response.status,
-      );
+      throw await apiErrorFromResponse(response);
     }
 
     const payload = (await response.json()) as SessionsPage;
@@ -66,4 +108,35 @@ export async function fetchSessions(limit = 100): Promise<DevinSession[]> {
   }
 
   return collected.slice(0, limit);
+}
+
+export async function createSession(input: CreateSessionInput): Promise<CreatedSession> {
+  const { apiKey, orgId, baseUrl } = resolveConfig();
+  const body: {
+    prompt: string;
+    devin_mode?: DevinMode;
+    tags?: string[];
+    title?: string | null;
+  } = {
+    prompt: input.prompt,
+    ...(input.devinMode === undefined ? {} : { devin_mode: input.devinMode }),
+    ...(input.tags === undefined ? { tags: ["cog-autodev"] } : { tags: input.tags }),
+    ...(input.title === undefined ? {} : { title: input.title }),
+  };
+  const url = new URL(`/v3/organizations/${encodeURIComponent(orgId)}/sessions`, baseUrl);
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw await apiErrorFromResponse(response);
+  }
+
+  return (await response.json()) as CreatedSession;
 }
