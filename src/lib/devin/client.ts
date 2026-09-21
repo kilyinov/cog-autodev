@@ -76,18 +76,14 @@ async function apiErrorFromResponse(response: Response): Promise<DevinApiError> 
   );
 }
 
-/**
- * Fetches sessions from `GET /v3/organizations/{org_id}/sessions`, following
- * `end_cursor` until `limit` sessions are collected or the API runs out.
- */
-export async function fetchSessions(limit = 100): Promise<DevinSession[]> {
+async function fetchSessionPages(path: string, limit: number): Promise<DevinSession[]> {
   const { apiKey, orgId, baseUrl } = resolveConfig();
   const pageSize = 100;
   const collected: DevinSession[] = [];
   let cursor: string | null = null;
 
   while (collected.length < limit) {
-    const url = new URL(`/v3/organizations/${encodeURIComponent(orgId)}/sessions`, baseUrl);
+    const url = new URL(`/v3/organizations/${encodeURIComponent(orgId)}/${path}`, baseUrl);
     url.searchParams.set("first", String(Math.min(pageSize, limit - collected.length)));
     if (cursor) url.searchParams.set("after", cursor);
 
@@ -108,6 +104,23 @@ export async function fetchSessions(limit = 100): Promise<DevinSession[]> {
   }
 
   return collected.slice(0, limit);
+}
+
+/**
+ * Fetches sessions via `GET /v3/organizations/{org_id}/sessions/insights` so each
+ * item carries `acus_consumed`; falls back to the plain `sessions` endpoint
+ * (without spend data) when the service user lacks insights access (403) or the
+ * endpoint is unavailable (404).
+ */
+export async function fetchSessions(limit = 100): Promise<DevinSession[]> {
+  try {
+    return await fetchSessionPages("sessions/insights", limit);
+  } catch (error) {
+    if (error instanceof DevinApiError && (error.status === 403 || error.status === 404)) {
+      return fetchSessionPages("sessions", limit);
+    }
+    throw error;
+  }
 }
 
 export async function createSession(input: CreateSessionInput): Promise<CreatedSession> {

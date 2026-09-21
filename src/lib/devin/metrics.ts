@@ -61,6 +61,7 @@ function toSessionView(session: DevinSession): SessionView {
     requestedBy: session.user_id,
     tags: session.tags ?? [],
     pullRequestUrl: session.pull_requests?.[0]?.pr_url ?? null,
+    acusConsumed: typeof session.acus_consumed === "number" ? session.acus_consumed : null,
   };
 }
 
@@ -117,6 +118,10 @@ function detectIssues(sessions: SessionView[], now: number): AgentIssue[] {
   });
 }
 
+export function formatAcus(value: number): string {
+  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
 export function formatMinutes(minutes: number): string {
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
@@ -159,6 +164,45 @@ function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? Math.round((sorted[mid - 1] + sorted[mid]) / 2) : sorted[mid];
+}
+
+function roundAcus(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function medianAcus(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const value = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  return roundAcus(value);
+}
+
+function buildSpend(sessions: SessionView[]): DashboardData["spend"] {
+  const withSpend = sessions.filter((session) => session.acusConsumed !== null);
+  const values = withSpend.map((session) => session.acusConsumed as number);
+  const totalAcus = roundAcus(values.reduce((sum, value) => sum + value, 0));
+  const topSessions = [...withSpend]
+    .sort((a, b) => (b.acusConsumed as number) - (a.acusConsumed as number))
+    .slice(0, 5)
+    .map((session) => ({
+      id: session.id,
+      url: session.url,
+      title: session.title,
+      status: session.status,
+      acusConsumed: session.acusConsumed as number,
+      durationMinutes: session.durationMinutes,
+    }));
+
+  return {
+    available: withSpend.length > 0,
+    totalAcus,
+    averageAcus: values.length ? roundAcus(totalAcus / values.length) : 0,
+    medianAcus: medianAcus(values),
+    maxAcus: values.length ? roundAcus(Math.max(...values)) : 0,
+    sessionsWithSpend: withSpend.length,
+    topSessions,
+  };
 }
 
 export function buildDashboard(
@@ -228,5 +272,6 @@ export function buildDashboard(
     sessions,
     pullRequests,
     issues,
+    spend: buildSpend(sessions),
   };
 }

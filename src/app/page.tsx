@@ -5,10 +5,11 @@ import { NewSessionForm } from "@/components/new-session-form";
 import { PullRequestsPanel } from "@/components/pull-requests-panel";
 import { RefreshButton } from "@/components/refresh-button";
 import { SessionsTable } from "@/components/sessions-table";
+import { SpendPanel } from "@/components/spend-panel";
 import { StatCard } from "@/components/stat-card";
 import { isDevinApiConfigured } from "@/lib/devin/client";
 import { getDashboardData } from "@/lib/devin/dashboard";
-import { formatMinutes } from "@/lib/devin/metrics";
+import { formatAcus, formatMinutes } from "@/lib/devin/metrics";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ function parseWindow(value: string | string[] | undefined): number {
 export default async function Home({ searchParams }: PageProps<"/">) {
   const windowDays = parseWindow((await searchParams).window);
   const { data, error } = await getDashboardData(windowDays);
-  const { totals } = data;
+  const { totals, spend } = data;
 
   return (
     <div className="min-h-screen flex-1 bg-slate-950 text-slate-100">
@@ -71,7 +72,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
         <NewSessionForm enabled={isDevinApiConfigured()} />
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <StatCard
             label="Sessions"
             value={totals.sessions}
@@ -94,6 +95,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             value={`${totals.successRate}%`}
             hint={`median run ${formatMinutes(totals.medianDurationMinutes)}`}
           />
+          <StatCard
+            label="Avg spend / session"
+            value={spend.available ? `${formatAcus(spend.averageAcus)} ACU` : "—"}
+            hint={spend.available ? `${formatAcus(spend.totalAcus)} ACU total` : "no usage data"}
+          />
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
@@ -109,8 +115,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           <div className="min-w-0 lg:col-span-2">
             <SessionsTable sessions={data.sessions} />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-4">
             <PullRequestsPanel pullRequests={data.pullRequests} />
+            <SpendPanel spend={spend} />
           </div>
         </div>
 

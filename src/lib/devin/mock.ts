@@ -82,6 +82,8 @@ export function mockSessions(count = 90, now = Date.now()): DevinSession[] {
       user_id: pick(random, USERS),
       playbook_id: random() < 0.4 ? `playbook-${Math.floor(random() * 900 + 100)}` : null,
       tags: random() < 0.6 ? [pick(random, TAG_POOL)] : [],
+      acus_consumed:
+        Math.round((0.3 + (durationMinutes / 60) * (0.8 + random() * 1.4)) * 100) / 100,
       pull_requests: hasPr
         ? [
             {

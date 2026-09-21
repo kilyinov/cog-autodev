@@ -34,6 +34,8 @@ export type DevinSession = {
   /** Unix timestamp (seconds). */
   updated_at: number;
   devin_mode?: DevinMode | null;
+  /** ACUs consumed, only present via `sessions/insights`. */
+  acus_consumed?: number | null;
   user_id: string | null;
   playbook_id: string | null;
   tags: string[];
@@ -52,6 +54,7 @@ export type SessionView = {
   requestedBy: string | null;
   tags: string[];
   pullRequestUrl: string | null;
+  acusConsumed: number | null;
 };
 
 export type CreatedSessionView = {
@@ -61,6 +64,15 @@ export type CreatedSessionView = {
   title: string | null;
   devinMode: DevinMode | null;
   createdAt: string;
+};
+
+export type SessionSpendView = {
+  id: string;
+  url: string;
+  title: string;
+  status: SessionStatus;
+  acusConsumed: number;
+  durationMinutes: number;
 };
 
 export type PullRequestView = {
@@ -110,4 +122,16 @@ export type DashboardData = {
   sessions: SessionView[];
   pullRequests: PullRequestView[];
   issues: AgentIssue[];
+  spend: {
+    /** False when no session in window has a numeric acus_consumed. */
+    available: boolean;
+    totalAcus: number;
+    /** Mean over sessions with data. */
+    averageAcus: number;
+    medianAcus: number;
+    maxAcus: number;
+    sessionsWithSpend: number;
+    /** Top 5 by acusConsumed desc. */
+    topSessions: SessionSpendView[];
+  };
 };
