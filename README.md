@@ -9,6 +9,9 @@ The dashboard at `/` shows, for a selectable window (1/7/14/30 days):
 - pull requests opened by sessions, with links to each PR
 - agent issues: blocked, expired, stalled (working but idle > 4h) and finished-without-a-PR sessions
 - daily activity (sessions vs. pull requests)
+- ACU spend per session (average, median, max, total, top sessions), sourced from
+  `GET /v3/organizations/{org_id}/sessions/insights` (falls back to the plain sessions
+  list without spend data if unavailable)
 
 ## Getting started
 
@@ -23,7 +26,8 @@ Open http://localhost:3000.
 ## Data source
 
 With `DEVIN_API_KEY` and `DEVIN_ORG_ID` set, data is pulled from the Devin API
-(`GET /v3/organizations/{org_id}/sessions`). Without them — or if the API call fails — the
+(`GET /v3/organizations/{org_id}/sessions/insights`, falling back to
+`GET /v3/organizations/{org_id}/sessions` when the insights endpoint is unavailable). Without them — or if the API call fails — the
 dashboard falls back to deterministic demo data and says so in a banner.
 
 Authentication uses a [service user](https://docs.devin.ai/api-reference/authentication) API key

@@ -1,4 +1,4 @@
-import { formatMinutes } from "@/lib/devin/metrics";
+import { formatAcus, formatMinutes } from "@/lib/devin/metrics";
 import type { SessionView } from "@/lib/devin/types";
 import { StatusBadge } from "./status-badge";
 
@@ -20,6 +20,7 @@ export function SessionsTable({ sessions }: { sessions: SessionView[] }) {
                 <th className="px-5 py-3 font-medium">Session</th>
                 <th className="px-5 py-3 font-medium">Status</th>
                 <th className="px-5 py-3 font-medium">Duration</th>
+                <th className="px-5 py-3 font-medium">ACUs</th>
                 <th className="px-5 py-3 font-medium">PR</th>
                 <th className="px-5 py-3 font-medium">Started</th>
               </tr>
@@ -45,6 +46,13 @@ export function SessionsTable({ sessions }: { sessions: SessionView[] }) {
                   </td>
                   <td className="px-5 py-3 tabular-nums text-slate-300">
                     {formatMinutes(session.durationMinutes)}
+                  </td>
+                  <td className="px-5 py-3 tabular-nums text-slate-300">
+                    {session.acusConsumed !== null ? (
+                      formatAcus(session.acusConsumed)
+                    ) : (
+                      <span className="text-slate-600">—</span>
+                    )}
                   </td>
                   <td className="px-5 py-3">
                     {session.pullRequestUrl ? (
