@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ActivityChart } from "@/components/activity-chart";
 import { IssuesPanel } from "@/components/issues-panel";
+import { NewSessionForm } from "@/components/new-session-form";
 import { PullRequestsPanel } from "@/components/pull-requests-panel";
 import { RefreshButton } from "@/components/refresh-button";
 import { SessionsTable } from "@/components/sessions-table";
 import { StatCard } from "@/components/stat-card";
+import { isDevinApiConfigured } from "@/lib/devin/client";
 import { getDashboardData } from "@/lib/devin/dashboard";
 import { formatMinutes } from "@/lib/devin/metrics";
 
@@ -66,6 +68,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             : "Demo data. Set DEVIN_API_KEY and DEVIN_ORG_ID to show your organization's real sessions."}
           {error ? ` Devin API error: ${error}` : ""}
         </div>
+
+        <NewSessionForm enabled={isDevinApiConfigured()} />
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
